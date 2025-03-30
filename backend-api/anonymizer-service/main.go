@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"regexp"
 )
 
 type AnonymizeRequest struct {
@@ -14,6 +15,11 @@ type AnonymizeRequest struct {
 
 type AnonymizeResponse struct {
 	AnonymizedText string `json:"anonymized_text"`
+}
+
+func anonymizeText(text string) string {
+	re := regexp.MustCompile(`\b[A-Z][a-z]+\b`)
+	return re.ReplaceAllString(text, "[REDACTED]")
 }
 
 func anonymizeHandler(w http.ResponseWriter, r *http.Request) {
@@ -35,7 +41,7 @@ func anonymizeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	anonymized := anonymizeText(reqData.Text)
+	anonymized := anonymizeText(reqData.Text) // Ensure anonymizeText is used here
 	resData := AnonymizeResponse{AnonymizedText: anonymized}
 
 	w.Header().Set("Content-Type", "application/json")
