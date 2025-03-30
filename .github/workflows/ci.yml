@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      # Build and test API Gateway (Go)
+      - name: Set up Go 1.18 for API Gateway
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.18'
+      - name: Build and Test API Gateway
+        working-directory: backend-api/api-gateway
+        run: |
+          echo "Running tests for API Gateway..."
+          go test ./... -v
+          echo "Building API Gateway binary..."
+          go build -o api-gateway main.go
+
+      # Build and test Anonymizer Service (Go)
+      - name: Set up Go 1.18 for Anonymizer Service
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.18'
+      - name: Build and Test Anonymizer Service
+        working-directory: backend-api/anonymizer-service
+        run: |
+          echo "Running tests for Anonymizer Service..."
+          go test ./... -v
+          echo "Building Anonymizer Service binary..."
+          go build -o anonymizer-service main.go
+
+      # Build and test Moderation Service (Node.js)
+      - name: Set up Node.js 14
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+      - name: Install Moderation Service dependencies
+        working-directory: backend-api/moderation-service
+        run: npm install
+      - name: Run tests for Moderation Service
+        working-directory: backend-api/moderation-service
+        run: npm test
