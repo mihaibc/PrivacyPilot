@@ -1,0 +1,118 @@
+version: '3.8'
+
+services:
+  # --- Core Services ---
+  api-gateway:
+    # ... (no changes needed here)
+    depends_on:
+      # ... (no changes needed here)
+    networks:
+      - privacy_pilot_net
+    restart: unless-stopped
+
+  anonymizer-service:
+    # ... (no changes needed here)
+    environment:
+      # ...
+      - AI_COORDINATOR_URL=http://ai-coordinator:8083
+    depends_on:
+      - ai-coordinator
+    networks:
+      - privacy_pilot_net
+    restart: unless-stopped
+
+  moderation-service:
+    # ... (no changes needed here)
+    environment:
+      # ...
+      - AI_COORDINATOR_URL=http://ai-coordinator:8083
+    depends_on:
+      - ai-coordinator
+    networks:
+      - privacy_pilot_net
+    restart: unless-stopped
+
+  ai-coordinator:
+    build:
+      context: ../../services/ai-coordinator
+      dockerfile: Dockerfile
+    container_name: privacy_pilot_ai_coordinator
+    environment:
+      - GIN_MODE=${GIN_MODE:-debug}
+      - PORT=8083
+      # Add Adapter URLs
+      - OLLAMA_ADAPTER_URL=http://ollama-adapter:8084 # <-- Add Ollama Adapter URL
+      # - AZURE_AI_ADAPTER_URL=http://azure-ai-adapter:8085 # Add later
+    depends_on: # Coordinator depends on the adapters it uses
+      - ollama-adapter
+      # - azure-ai-adapter # Add later
+    networks:
+      - privacy_pilot_net
+    restart: unless-stopped
+
+  # --- AI Adapters ---
+  ollama-adapter: # <-- NEW SERVICE
+    build:
+      context: ../../ai-adapters/ollama-adapter
+      dockerfile: Dockerfile
+    container_name: privacy_pilot_ollama_adapter
+    environment:
+      - GIN_MODE=${GIN_MODE:-debug}
+      - PORT=8084
+      - OLLAMA_API_URL=${OLLAMA_API_URL:-http://ollama:11434} # Point to the ollama service below
+      - OLLAMA_ANONYMIZE_MODEL=${OLLAMA_ANONYMIZE_MODEL:-mistral:7b} # Specify model
+    depends_on:
+      - ollama # Adapter depends on Ollama service (if running in compose)
+    networks:
+      - privacy_pilot_net
+    restart: unless-stopped
+
+  # azure-ai-adapter: # Add later
+  # stable-diffusion-adapter: # Add later
+
+  # --- AI Models (Optional - Local Ollama) ---
+  ollama: # <-- OPTIONAL OLLAMA SERVICE
+    image: ollama/ollama:latest # Use official Ollama image
+    container_name: privacy_pilot_ollama_server
+    ports:
+      - "11434:11434" # Expose Ollama API port locally
+    volumes:
+      - ollama_data:/root/.ollama # Persist downloaded models
+    # --- GPU Configuration (Important for performance!) ---
+    # Uncomment ONE of the following deploy sections based on your setup
+    # Option 1: For Nvidia GPUs (using nvidia-container-toolkit)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1 # Or 'all'
+    #           capabilities: [gpu]
+    # Option 2: For Docker Desktop integrated Virtualization (check docs)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       generic_resources:
+    #         - discrete_resource_spec:
+    #             kind: gpu
+    #             value: 1 # Request one GPU
+    # Option 3: CPU only (will be SLOW for larger models) - No deploy section needed
+    # --- End GPU Configuration ---
+    networks:
+      - privacy_pilot_net
+    restart: unless-stopped
+
+  # --- Databases & Caches ---
+  # ... (mongo_db, redis_cache - keep as before)
+
+# --- Volumes ---
+volumes:
+  mongo_data:
+    driver: local
+  redis_data:
+    driver: local
+  ollama_data: # <-- Add volume for Ollama
+    driver: local
+
+# --- Networks ---
+# ... (keep as before)
