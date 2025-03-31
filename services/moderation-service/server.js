@@ -1,13 +1,15 @@
+// ./services/moderation-service/server.js
+
 const express = require('express');
 const { requestAiTask, TASK_TYPES } = require('./lib/aiCoordinatorClient'); // Import the client
 
 const app = express();
 
 // --- Configuration ---
-const PORT = process.env.PORT || 8082;
+const PORT = process.env.PORT || 8082; // Default port for Moderation service
 
 // --- Middleware ---
-app.use(express.json());
+app.use(express.json()); // Parse JSON request bodies
 
 // --- Routes ---
 
@@ -16,7 +18,7 @@ app.get('/health', (req, res) => {
     res.status(200).json({ status: 'OK', service: 'Moderation Service' });
 });
 
-// Moderation Endpoint (Refactored)
+// Moderation Endpoint (Refactored and Corrected)
 app.post('/moderate', async (req, res, next) => { // Make handler async
     const { text, imageUrl } = req.body;
 
@@ -44,37 +46,53 @@ app.post('/moderate', async (req, res, next) => { // Make handler async
         }
 
         // --- Call AI Coordinator ---
-        const moderationResult = await requestAiTask(taskType, payload);
+        // Pass taskType, payload, and an empty config object {} as the third argument
+        const moderationResult = await requestAiTask(taskType, payload, {});
+        // --------------------------
+
         // The client now returns only the 'result' part of the coordinator's response
         // Ensure the structure matches what the coordinator/adapter will return
-        // Example expected structure based on previous Go definition:
+        // Example expected structure:
         // { is_acceptable: true, flags: [], details: "...", confidence_score: 0.95 }
 
         console.log('Moderation Service: Successfully processed moderation via AI Coordinator.');
         res.status(200).json(moderationResult); // Return the result directly
 
     } catch (error) {
+        // Log the specific error from the coordinator call
         console.error(`Moderation Service: Error during AI Coordinator call: ${error.message}`);
-        // Pass error to the global error handler
-        next(error); // Use next(error) for async errors
+        // Pass error to the global error handler for consistent response format
+        next(error); // Use next(error) for async errors in Express
     }
 });
 
 
 // --- Global Error Handler (Basic) ---
+// Catches errors passed via next(error)
 app.use((err, req, res, next) => {
-    console.error("Unhandled error:", err.message); // Log just the message for cleaner output
-    // Provide a more generic error message to the client
+    // Log the error internally
+    console.error("Unhandled error:", err.message);
+    // Send a generic error message to the client to avoid leaking details
     res.status(500).json({ error: 'An internal error occurred while processing the moderation request.' });
 });
 
-// --- Start Server & Graceful Shutdown ---
-// (Keep the server start and graceful shutdown logic from the previous version)
+// --- Start Server ---
 const server = app.listen(PORT, () => {
     console.log(`Moderation Service listening on port ${PORT}`);
 });
 
-process.on('SIGTERM', () => { /* ... */ });
-process.on('SIGINT', () => { /* ... */ });
+// --- Graceful Shutdown Logic ---
+const gracefulShutdown = (signal) => {
+    console.log(`${signal} signal received: closing HTTP server`);
+    server.close(() => {
+        console.log('HTTP server closed');
+        // Add any other cleanup logic here (e.g., close database connections)
+        process.exit(0); // Exit gracefully
+    });
+};
 
-module.exports = server; // Export for testing
+// Listen for termination signals
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT')); // Handle Ctrl+C
+
+module.exports = server; // Export for testing purposes

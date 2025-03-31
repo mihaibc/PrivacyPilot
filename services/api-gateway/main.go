@@ -42,8 +42,8 @@ func main() {
 	// aiCoordinatorClient := clients.NewAICoordinatorClient(aiCoordinatorURL) // Create later
 
 	// --- Handlers ---
-	anonymizerClient := clients.NewAnonymizerClient(anonymizerURL)
-	moderationClient := clients.NewModerationClient(moderationURL)
+	// anonymizerClient := clients.NewAnonymizerClient(anonymizerURL)
+	// moderationClient := clients.NewModerationClient(moderationURL)
 	anonymizeHandler := handlers.NewAnonymizeHandler(anonymizerClient)
 	moderateHandler := handlers.NewModerateHandler(moderationClient)
 	// aiHandler := handlers.NewAIHandler(aiCoordinatorClient) // Create later
