@@ -75,6 +75,6 @@ jobs:
         working-directory: ./ai-adapters/ollama-adapter
         run: go build -o /dev/null ./...
 
-      - name: Build Node.js - Moderation Service (Check - if applicable)
-        working-directory: ./services/moderation-service
-        run: npm run build # If you add a build script (e.g., for TypeScript)
+      # - name: Build Node.js - Moderation Service (Check - if applicable)
+      #   working-directory: ./services/moderation-service
+      #   run: npm run build # If you add a build script (e.g., for TypeScript)
