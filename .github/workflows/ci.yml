@@ -1,54 +1,80 @@
+# .github/workflows/ci.yml
+
 name: CI
 
+# Controls when the workflow will run
 on:
   push:
-    branches: [ main ]
+    branches: [ main ] # Runs on pushes to the main branch
   pull_request:
-    branches: [ main ]
+    branches: [ main ] # Runs on pull requests targeting the main branch
+  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 jobs:
-  build-and-test:
-    runs-on: ubuntu-latest
+  # Job to run tests for all services
+  test:
+    runs-on: ubuntu-latest # Use the latest Ubuntu runner
 
     steps:
+      # --- Checkout Code ---
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4 # Use latest checkout action
 
-      # Build and test API Gateway (Go)
-      - name: Set up Go 1.18 for API Gateway
-        uses: actions/setup-go@v2
+      # --- Go Setup and Testing ---
+      - name: Set up Go environment
+        uses: actions/setup-go@v5 # Use latest setup-go action
         with:
-          go-version: '1.18'
-      - name: Build and Test API Gateway
-        working-directory: backend-api/api-gateway
-        run: |
-          echo "Running tests for API Gateway..."
-          go test ./... -v
-          echo "Building API Gateway binary..."
-          go build -o api-gateway main.go
+          go-version: '1.22' # Match the version used in Dockerfiles
 
-      # Build and test Anonymizer Service (Go)
-      - name: Set up Go 1.18 for Anonymizer Service
-        uses: actions/setup-go@v2
-        with:
-          go-version: '1.18'
-      - name: Build and Test Anonymizer Service
-        working-directory: backend-api/anonymizer-service
-        run: |
-          echo "Running tests for Anonymizer Service..."
-          go test ./... -v
-          echo "Building Anonymizer Service binary..."
-          go build -o anonymizer-service main.go
+      - name: Run Go Tests - API Gateway
+        working-directory: ./services/api-gateway
+        run: go test -v -cover ./...
 
-      # Build and test Moderation Service (Node.js)
-      - name: Set up Node.js 14
-        uses: actions/setup-node@v2
+      - name: Run Go Tests - Anonymizer Service
+        working-directory: ./services/anonymizer-service
+        run: go test -v -cover ./...
+
+      - name: Run Go Tests - AI Coordinator
+        working-directory: ./services/ai-coordinator
+        run: go test -v -cover ./... # Add tests later if needed
+
+      - name: Run Go Tests - Ollama Adapter
+        working-directory: ./ai-adapters/ollama-adapter
+        run: go test -v -cover ./... # Add tests later if needed
+
+      # --- Node.js Setup and Testing ---
+      - name: Set up Node.js environment
+        uses: actions/setup-node@v4 # Use latest setup-node action
         with:
-          node-version: '14'
-      - name: Install Moderation Service dependencies
-        working-directory: backend-api/moderation-service
-        run: npm install
-      - name: Run tests for Moderation Service
-        working-directory: backend-api/moderation-service
-        run: npm test
+          node-version: '20' # Match the version specified in package.json
+          cache: 'npm' # Enable caching for npm dependencies
+          cache-dependency-path: ./services/moderation-service/package-lock.json # Cache based on lock file
+
+      - name: Install Node.js Dependencies - Moderation Service
+        working-directory: ./services/moderation-service
+        run: npm ci # Use 'ci' for clean installs in CI environments
+
+      - name: Run Node.js Tests - Moderation Service
+        working-directory: ./services/moderation-service
+        run: npm test # Runs the test script defined in package.json
+
+      - name: Build Go - API Gateway (Check)
+        working-directory: ./services/api-gateway
+        run: go build -o /dev/null ./...
+
+      - name: Build Go - Anonymizer Service (Check)
+        working-directory: ./services/anonymizer-service
+        run: go build -o /dev/null ./...
+
+      - name: Build Go - AI Coordinator (Check)
+        working-directory: ./services/ai-coordinator
+        run: go build -o /dev/null ./...
+
+      - name: Build Go - Ollama Adapter (Check)
+        working-directory: ./ai-adapters/ollama-adapter
+        run: go build -o /dev/null ./...
+
+      - name: Build Node.js - Moderation Service (Check - if applicable)
+        working-directory: ./services/moderation-service
+        run: npm run build # If you add a build script (e.g., for TypeScript)
