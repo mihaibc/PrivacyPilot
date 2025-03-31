@@ -1,0 +1,24 @@
+{
+    "name": "moderation-service",
+    "version": "1.0.0",
+    "description": "PrivacyPilot Moderation Microservice",
+    "main": "server.js",
+    "scripts": {
+      "start": "node server.js",
+      "dev": "node --watch server.js", 
+      "test": "jest --coverage", 
+      "lint": "eslint ." 
+    },
+    "dependencies": {
+      "express": "^5.1.0" 
+    },
+    "devDependencies": {
+      "jest": "^29.7.0", 
+      "supertest": "^7.1.0" 
+    },
+    "engines": {
+      "node": ">=20.0.0" 
+    },
+    "author": "[Your Name or Organization Name]", 
+    "license": "MIT" 
+  }
