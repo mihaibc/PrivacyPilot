@@ -4,7 +4,7 @@ services:
   # --- Core Services ---
   api-gateway:
     # ... (no changes needed here)
-    depends_on:
+    depends_on: []
       # ... (no changes needed here)
     networks:
       - privacy_pilot_net
