@@ -1,0 +1,42 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.env
+
+# Go
+*.exe
+*.test
+*.out
+vendor/
+
+# Docker
+*.tar
+*.img
+*.container
+docker-compose.override.yml
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+crash.log
+override.tf
+override.tf.json
+terraform.tfvars
+terraform.tfvars.json
+
+# Perl
+*.pmc
+*.pod
+*.bs
+*.o
+*.so
+*.dll
+*.bundle
+*.exe
+*.out
+*.obj
+*.blib/
+*.tmp
